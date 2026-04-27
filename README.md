@@ -97,6 +97,7 @@ esp_err_t      wifix_start(const wifix_config_t *cfg);
 wifix_state_t  wifix_state(void);
 int            wifix_rssi(void);
 const char    *wifix_current_ssid(void);
+esp_err_t      wifix_current_ip(char *out, size_t cap);   // STA 模式 DHCP IP
 int            wifix_list_count(void);
 esp_err_t      wifix_list_get(int idx, char *out, size_t cap);
 

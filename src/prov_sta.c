@@ -164,9 +164,11 @@ static void sta_task(void *arg)
 
         bool got_one = false;
         for (int i = 0; i < cn; i++) {
-            ESP_LOGI(TAG, "尝试 [%d/%d] %s (RSSI=%d)", i + 1, cn, cands[i].ssid, cands[i].rssi);
             char pass[WIFIX_PASS_MAX] = {0};
             prov_storage_get_pass(cands[i].ssid, pass, sizeof(pass));
+            ESP_LOGI(TAG, "尝试 [%d/%d] ssid=\"%s\" (len=%d) pass_len=%d RSSI=%d",
+                     i + 1, cn, cands[i].ssid,
+                     (int)strlen(cands[i].ssid), (int)strlen(pass), cands[i].rssi);
             if (try_connect(cands[i].ssid, pass, prov_rt()->sta_connect_timeout_ms)) {
                 wifix_set_state(WIFIX_STATE_CONNECTED);
                 got_one = true;
