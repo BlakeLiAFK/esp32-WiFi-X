@@ -85,9 +85,11 @@ void prov_softap_run(void)
     wifi_config_t wcfg = {0};
     strlcpy((char *)wcfg.ap.ssid, ap_ssid, sizeof(wcfg.ap.ssid));
     wcfg.ap.ssid_len = strlen(ap_ssid);
-    wcfg.ap.channel = 6;
-    wcfg.ap.max_connection = 3;
+    wcfg.ap.channel = 1;                 // 1 / 6 / 11 不重叠；1 一般最干净
+    wcfg.ap.max_connection = 4;
     wcfg.ap.authmode = WIFI_AUTH_OPEN;
+    wcfg.ap.beacon_interval = 100;
+    wcfg.ap.pmf_cfg.required = false;    // 开放 AP 不强制 PMF，提高 iOS 兼容
 
     esp_wifi_set_mode(WIFI_MODE_AP);
     esp_wifi_set_config(WIFI_IF_AP, &wcfg);
