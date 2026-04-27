@@ -71,6 +71,10 @@ wifix_state_t wifix_state(void);
 int           wifix_rssi(void);
 const char   *wifix_current_ssid(void);  // 未连返回 NULL
 
+// 当前 STA 模式 DHCP 获得的 IP；写入 out（至少 16 字节）
+// 未连接返回 ESP_ERR_INVALID_STATE，out[0]=0
+esp_err_t     wifix_current_ip(char *out, size_t cap);
+
 // 注册状态变化回调（线程安全；同步从内部任务调用，回调里别阻塞）
 void wifix_set_event_cb(wifix_event_cb_t cb, void *user);
 

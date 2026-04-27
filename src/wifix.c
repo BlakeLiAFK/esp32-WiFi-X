@@ -44,6 +44,20 @@ int wifix_rssi(void) { return prov_sta_rssi(); }
 
 const char *wifix_current_ssid(void) { return prov_sta_current_ssid(); }
 
+esp_err_t wifix_current_ip(char *out, size_t cap)
+{
+    if (!out || cap < 1) return ESP_ERR_INVALID_ARG;
+    out[0] = 0;
+    if (!prov_sta_is_connected()) return ESP_ERR_INVALID_STATE;
+    esp_netif_t *sta = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+    if (!sta) return ESP_ERR_INVALID_STATE;
+    esp_netif_ip_info_t info;
+    if (esp_netif_get_ip_info(sta, &info) != ESP_OK) return ESP_FAIL;
+    if (info.ip.addr == 0) return ESP_ERR_INVALID_STATE;
+    snprintf(out, cap, IPSTR, IP2STR(&info.ip));
+    return ESP_OK;
+}
+
 void wifix_set_event_cb(wifix_event_cb_t cb, void *user)
 {
     s_cb = cb;
