@@ -1,6 +1,5 @@
 version: "0.1.0"
 description: "ESP32 WiFi provisioning with SoftAP captive portal, multi-network support, and Web management UI."
-url: "local://wifix"
 maintainers:
   - "ade <ade.li.indie@gmail.com>"
 dependencies:

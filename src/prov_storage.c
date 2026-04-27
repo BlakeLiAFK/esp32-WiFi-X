@@ -29,8 +29,8 @@ static const char *TAG = "wifix.store";
 
 static int s_max_networks = 16;
 
-static void k_ssid(int i, char *out) { snprintf(out, 8, "s%d", i); }
-static void k_pass(int i, char *out) { snprintf(out, 8, "p%d", i); }
+static void k_ssid(int i, char *out) { snprintf(out, 16, "s%d", i & 0xFF); }
+static void k_pass(int i, char *out) { snprintf(out, 16, "p%d", i & 0xFF); }
 
 static esp_err_t open_rw(nvs_handle_t *h)
 {
@@ -83,7 +83,7 @@ esp_err_t prov_storage_load_all(prov_creds_t *out, int cap, int *count_out)
     nvs_get_u8(h, KEY_COUNT, &n);
     if (n > s_max_networks) n = s_max_networks;
     int outn = 0;
-    char k[8];
+    char k[16];
     for (int i = 0; i < n && outn < cap; i++) {
         size_t l;
         k_ssid(i, k);
@@ -127,7 +127,7 @@ static esp_err_t rewrite_all(prov_creds_t *list, int n)
     esp_err_t err = open_rw(&h);
     if (err != ESP_OK) return err;
 
-    char k[8];
+    char k[16];
     // 写当前
     for (int i = 0; i < n; i++) {
         k_ssid(i, k);
@@ -214,7 +214,7 @@ esp_err_t prov_storage_clear_all(void)
 {
     nvs_handle_t h;
     if (open_rw(&h) != ESP_OK) return ESP_FAIL;
-    char k[8];
+    char k[16];
     for (int i = 0; i < s_max_networks; i++) {
         k_ssid(i, k); nvs_erase_key(h, k);
         k_pass(i, k); nvs_erase_key(h, k);

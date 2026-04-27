@@ -1,7 +1,7 @@
 // wifix 基础使用示例
 //
 // 烧录后：
-//   - 首次启动会启 SoftAP "Wifix-XXXX"，手机连上自动弹配网页
+//   - 首次启动会启 SoftAP "X-XXXX"，手机连上自动弹配网页
 //   - 配置一个 WiFi 后会重启进 STA 模式
 //   - 之后浏览器访问 http://<设备 IP>/ 可继续增删 WiFi
 //   - 默认账号：admin / admin

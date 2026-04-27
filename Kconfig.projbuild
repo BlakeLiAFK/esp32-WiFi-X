@@ -19,9 +19,9 @@ menu "Wifix - WiFi Provisioning"
 
     config WIFIX_AP_SSID_PREFIX
         string "SoftAP SSID 前缀"
-        default "Wifix-"
+        default "X-"
         help
-            最终 SoftAP 名格式：<前缀><MAC 后两字节>，例如 Wifix-9075。
+            最终 SoftAP 名格式：<前缀><MAC 后两字节>，例如 X-9075。
 
     config WIFIX_HTTP_PORT
         int "HTTP server 端口（AP 与 STA 共用）"

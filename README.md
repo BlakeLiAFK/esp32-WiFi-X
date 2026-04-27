@@ -58,7 +58,7 @@ idf_component_register(SRCS "app_main.c" INCLUDE_DIRS ".")
 `idf.py menuconfig` → `Wifix - WiFi Provisioning`：
 - `WIFIX_MAX_NETWORKS` 默认 16
 - `WIFIX_DEFAULT_USERNAME` / `WIFIX_DEFAULT_PASSWORD` 默认 `admin` / `admin`
-- `WIFIX_AP_SSID_PREFIX` 默认 `Wifix-`
+- `WIFIX_AP_SSID_PREFIX` 默认 `X-`（最终 AP 名形如 `X-9075`）
 - `WIFIX_HTTP_PORT` 默认 80
 - `WIFIX_POWER_CYCLE_THRESHOLD` 默认 3
 - `WIFIX_REQUIRE_AUTH_IN_AP` 默认 n（SoftAP 免认证）
