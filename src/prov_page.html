@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Wifix</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{overflow-x:hidden}
+body{font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#0e1116;color:#e6edf3;padding:16px;min-height:100vh}
+h1{font-size:20px;margin-bottom:4px}
+.sub{color:#8b949e;font-size:12px;margin-bottom:18px}
+.card{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:14px;margin-bottom:14px}
+.card h2{font-size:13px;color:#8b949e;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;font-weight:600}
+.row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #21262d}
+.row:last-child{border-bottom:none}
+.row .ssid{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .badge{font-size:10px;padding:2px 6px;border-radius:4px;background:#1f6feb;color:white}
+.row .lock{font-size:10px;color:#8b949e}
+.bars{display:inline-flex;gap:1px;align-items:flex-end;height:14px;width:14px}
+.bars span{width:2.5px;background:#30363d;border-radius:1px}
+.bars span.on{background:#3fb950}
+button{background:#21262d;color:#e6edf3;border:1px solid #30363d;padding:6px 10px;border-radius:6px;font-size:12px;cursor:pointer}
+button:hover{background:#30363d}
+button.primary{background:#238636;border-color:#238636}
+button.primary:hover{background:#2ea043}
+button.danger{background:#da3633;border-color:#da3633}
+button.danger:hover{background:#f85149}
+button:disabled{opacity:.4;cursor:not-allowed}
+input,select{background:#0d1117;border:1px solid #30363d;color:#e6edf3;padding:8px 10px;border-radius:6px;width:100%;font-size:14px;font-family:inherit}
+input:focus,select:focus{outline:none;border-color:#1f6feb}
+.field{margin-bottom:10px}
+.field label{display:block;font-size:11px;color:#8b949e;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.empty{color:#6e7681;font-size:12px;text-align:center;padding:14px 0}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#161b22;border:1px solid #30363d;padding:10px 16px;border-radius:8px;font-size:13px;opacity:0;transition:opacity .25s;pointer-events:none}
+.toast.show{opacity:1}
+.statusdot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.statusdot.ok{background:#3fb950}
+.statusdot.warn{background:#d29922}
+.statusdot.err{background:#f85149}
+details{margin-top:8px}
+summary{cursor:pointer;font-size:12px;color:#8b949e;padding:4px 0}
+summary:hover{color:#e6edf3}
+.hint{font-size:11px;color:#6e7681;margin-top:4px}
+</style>
+</head>
+<body>
+<h1 id="title">Wifix</h1>
+<div class="sub" id="subtitle">配网管理</div>
+
+<div class="card" id="status-card" style="display:none">
+  <h2>当前状态</h2>
+  <div id="status-line"></div>
+</div>
+
+<div class="card">
+  <h2>已保存网络 <span id="count" style="color:#6e7681"></span></h2>
+  <div id="saved-list"><div class="empty">加载中…</div></div>
+</div>
+
+<div class="card">
+  <h2>添加网络</h2>
+  <div class="field">
+    <label>SSID</label>
+    <select id="scan-select" onchange="onScanPick()">
+      <option value="">— 输入或从扫描结果选 —</option>
+    </select>
+  </div>
+  <div class="field">
+    <label>SSID（手动）</label>
+    <input id="add-ssid" placeholder="网络名" autocomplete="off">
+  </div>
+  <div class="field">
+    <label>密码</label>
+    <input id="add-pass" type="password" placeholder="留空表示开放网络">
+  </div>
+  <div class="actions">
+    <button class="primary" onclick="addNet()">添加</button>
+    <button onclick="rescan()" id="rescan-btn">刷新扫描</button>
+  </div>
+</div>
+
+<div class="card">
+  <details>
+    <summary>修改管理账号</summary>
+    <div style="margin-top:10px">
+      <div class="field">
+        <label>新用户名</label>
+        <input id="pw-user" autocomplete="off">
+      </div>
+      <div class="field">
+        <label>新密码</label>
+        <input id="pw-pass" type="password" autocomplete="new-password">
+      </div>
+      <button onclick="changePw()">保存账号</button>
+      <div class="hint">仅 STA 模式下生效；保存后下一次访问会要求重新登录。</div>
+    </div>
+  </details>
+</div>
+
+<div class="card">
+  <div class="actions">
+    <button class="primary" id="done-btn" onclick="finish()" style="display:none">完成并连接</button>
+    <button class="danger" onclick="clearAll()">清空全部凭证</button>
+  </div>
+  <div class="hint" id="done-hint" style="display:none;margin-top:8px">设备会重启并尝试连接已保存的网络。</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let info={mode:'ap'};
+
+function $(id){return document.getElementById(id)}
+function toast(msg,err){
+  const t=$('toast');t.textContent=msg;
+  t.style.borderColor=err?'#f85149':'#30363d';
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+function bars(rssi){
+  // -50 强 / -60 中 / -70 弱 / -80 差
+  const lvl = rssi>=-55?4 : rssi>=-65?3 : rssi>=-75?2 : rssi>=-85?1 : 0;
+  let h='<span class="bars">';
+  for(let i=1;i<=4;i++){
+    h+=`<span class="${i<=lvl?'on':''}" style="height:${i*25}%"></span>`;
+  }
+  return h+'</span>';
+}
+async function api(path,opts){
+  const r=await fetch(path,opts);
+  if(r.status===401){location.reload();return null;}
+  return r;
+}
+async function loadInfo(){
+  const r=await api('/info');if(!r)return;
+  info=await r.json();
+  $('title').textContent= info.mode==='ap'?'Wifix 配网':'Wifix 管理';
+  $('subtitle').textContent= info.mode==='ap'?'设备首次配置或被请求重新配网':'已连入家庭网络';
+  if(info.mode==='sta'){
+    $('status-card').style.display='block';
+    const stateName={2:'连接中',3:'已连接',4:'重试中'}[info.state]||'';
+    const cls = info.state===3?'ok' : info.state===4?'err':'warn';
+    $('status-line').innerHTML=`<span class="statusdot ${cls}"></span><b>${stateName}</b> ${info.current?' · '+info.current:''} ${info.rssi?' · '+info.rssi+' dBm':''}`;
+    $('done-btn').style.display='none';
+    $('done-hint').style.display='none';
+  }else{
+    $('done-btn').style.display='inline-block';
+    $('done-hint').style.display='block';
+  }
+  $('count').textContent=`(${info.count}/${info.max})`;
+}
+async function loadList(){
+  const r=await api('/list');if(!r)return;
+  const data=await r.json();
+  const box=$('saved-list');
+  if(!data.items.length){box.innerHTML='<div class="empty">尚未保存任何网络</div>';return;}
+  box.innerHTML='';
+  for(const it of data.items){
+    const row=document.createElement('div');row.className='row';
+    const safe=it.ssid.replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'})[c]);
+    row.innerHTML=`<span class="ssid">${safe}</span>${it.current?'<span class="badge">已连接</span>':''}<button data-ssid="${safe}">删除</button>`;
+    row.querySelector('button').onclick=()=>removeNet(it.ssid);
+    box.appendChild(row);
+  }
+}
+async function loadScan(){
+  const sel=$('scan-select');sel.innerHTML='<option value="">— 输入或从扫描结果选 —</option>';
+  const r=await api('/scan');if(!r)return;
+  const data=await r.json();
+  if(!data.aps||!data.aps.length){
+    sel.innerHTML+='<option disabled>(无扫描结果，仅在配网模式下提供)</option>';
+    return;
+  }
+  data.aps.sort((a,b)=>b.rssi-a.rssi);
+  for(const a of data.aps){
+    const opt=document.createElement('option');opt.value=a.ssid;
+    opt.textContent=`${a.ssid}  (${a.rssi} dBm${a.auth?'':' · 开放'})`;
+    sel.appendChild(opt);
+  }
+}
+function onScanPick(){
+  const v=$('scan-select').value;
+  if(v) $('add-ssid').value=v;
+}
+async function addNet(){
+  const ssid=$('add-ssid').value.trim();
+  if(!ssid){toast('请填 SSID',1);return;}
+  const pass=$('add-pass').value;
+  const r=await api('/add',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:`ssid=${encodeURIComponent(ssid)}&pass=${encodeURIComponent(pass)}`});
+  if(!r)return;
+  if(r.ok){
+    toast('已保存');
+    $('add-ssid').value='';$('add-pass').value='';$('scan-select').value='';
+    loadList();loadInfo();
+  }else{
+    toast('保存失败：'+await r.text(),1);
+  }
+}
+async function removeNet(ssid){
+  if(!confirm('删除 '+ssid+' ?'))return;
+  const r=await api('/remove',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'ssid='+encodeURIComponent(ssid)});
+  if(!r)return;
+  if(r.ok){toast('已删除');loadList();loadInfo();}else toast('失败',1);
+}
+async function clearAll(){
+  if(!confirm('确认清空全部凭证？此操作不可撤销。'))return;
+  if(!confirm('再次确认：所有 WiFi 都会被删除。'))return;
+  const r=await api('/clear',{method:'POST'});
+  if(r&&r.ok){toast('已清空');loadList();loadInfo();}
+}
+async function finish(){
+  const r=await api('/done',{method:'POST'});
+  if(r&&r.ok){toast('设备正在重启…');$('done-btn').disabled=true;}
+}
+async function changePw(){
+  const u=$('pw-user').value.trim();
+  const p=$('pw-pass').value;
+  if(!u||!p){toast('用户名和密码都要填',1);return;}
+  const r=await api('/change_pw',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:`user=${encodeURIComponent(u)}&pass=${encodeURIComponent(p)}`});
+  if(r&&r.ok){toast('已保存，下次访问需重新登录');$('pw-user').value='';$('pw-pass').value='';}
+}
+function rescan(){loadScan();toast('已刷新');}
+
+(async()=>{
+  await loadInfo();
+  await loadList();
+  await loadScan();
+  if(info.mode==='sta'){
+    setInterval(loadInfo,5000);
+  }
+})();
+</script>
+</body>
+</html>

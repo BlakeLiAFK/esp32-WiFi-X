@@ -1,0 +1,11 @@
+build/
+build_*/
+sdkconfig
+sdkconfig.old
+sdkconfig.*
+!sdkconfig.defaults
+!sdkconfig.defaults.*
+managed_components/
+dependencies.lock
+.cache/
+.DS_Store

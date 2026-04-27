@@ -1,0 +1,57 @@
+menu "Wifix - WiFi Provisioning"
+
+    config WIFIX_MAX_NETWORKS
+        int "保存的最大 WiFi 网络数"
+        range 1 32
+        default 16
+        help
+            上限取决于 NVS 空间；超过 16 一般用不到。
+
+    config WIFIX_DEFAULT_USERNAME
+        string "管理界面默认用户名"
+        default "admin"
+
+    config WIFIX_DEFAULT_PASSWORD
+        string "管理界面默认密码（首次烧录写入 NVS）"
+        default "admin"
+        help
+            仅在 NVS 还没存密码时使用。用户登录后可在 Web 端修改。
+
+    config WIFIX_AP_SSID_PREFIX
+        string "SoftAP SSID 前缀"
+        default "Wifix-"
+        help
+            最终 SoftAP 名格式：<前缀><MAC 后两字节>，例如 Wifix-9075。
+
+    config WIFIX_HTTP_PORT
+        int "HTTP server 端口（AP 与 STA 共用）"
+        default 80
+
+    config WIFIX_POWER_CYCLE_THRESHOLD
+        int "三连断电阈值（<=0 关闭）"
+        default 3
+        help
+            连续短电启动 N 次触发"下次开机进配网"flag；不会删除已存凭证。
+
+    config WIFIX_POWER_CYCLE_STABLE_MS
+        int "稳定启动判定时间（ms）"
+        default 3000
+        help
+            启动后多久没断电视为稳定，到期清零计数。
+
+    config WIFIX_STA_CONNECT_TIMEOUT_MS
+        int "单条 SSID 连接超时（ms）"
+        default 10000
+
+    config WIFIX_STA_RETRY_ROUND_DELAY_MS
+        int "全候选失败后等待重扫间隔（ms）"
+        default 30000
+
+    config WIFIX_REQUIRE_AUTH_IN_AP
+        bool "SoftAP 模式也强制鉴权"
+        default n
+        help
+            默认关闭：首次配网用户没有密码上下文，且开放 AP 上认证形同虚设。
+            打开后 SoftAP 模式下所有访问都需要 admin/admin（或已改的密码）。
+
+endmenu
