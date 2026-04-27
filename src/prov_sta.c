@@ -111,10 +111,13 @@ static int build_candidates(cand_t *cands, int cap)
 // 用 ssid+pass 试一次连接，等超时；成功返回 true
 static bool try_connect(const char *ssid, const char *pass, int timeout_ms)
 {
+    bool has_pass = pass && pass[0];
+
     wifi_config_t wcfg = {0};
     strlcpy((char *)wcfg.sta.ssid, ssid, sizeof(wcfg.sta.ssid));
-    strlcpy((char *)wcfg.sta.password, pass ? pass : "", sizeof(wcfg.sta.password));
-    wcfg.sta.threshold.authmode = WIFI_AUTH_OPEN;
+    strlcpy((char *)wcfg.sta.password, has_pass ? pass : "", sizeof(wcfg.sta.password));
+    // 默认要求 WPA-PSK 及以上；空密码降级为开放，避免被同名钓鱼开放 AP 抢连
+    wcfg.sta.threshold.authmode = has_pass ? WIFI_AUTH_WPA_PSK : WIFI_AUTH_OPEN;
     wcfg.sta.pmf_cfg.capable = true;
     wcfg.sta.scan_method = WIFI_FAST_SCAN;
     wcfg.sta.threshold.rssi = -90;
@@ -122,9 +125,13 @@ static bool try_connect(const char *ssid, const char *pass, int timeout_ms)
     esp_wifi_set_config(WIFI_IF_STA, &wcfg);
 
     strlcpy(s_current_ssid, ssid, sizeof(s_current_ssid));
+
+    // 先吃掉一个 disconnect 事件（如果当前已连，esp_wifi_disconnect 会异步触发）
+    // 否则该事件会在新 connect 还没结果时被误识为本次失败
+    esp_wifi_disconnect();
+    xEventGroupWaitBits(s_evt, EVT_DISCONNECTED, pdTRUE, pdFALSE, pdMS_TO_TICKS(500));
     xEventGroupClearBits(s_evt, EVT_GOT_IP | EVT_DISCONNECTED | EVT_KICK);
 
-    esp_wifi_disconnect();
     esp_err_t err = esp_wifi_connect();
     if (err != ESP_OK) {
         ESP_LOGW(TAG, "wifi_connect 立即失败 (%s) err=0x%x", ssid, err);

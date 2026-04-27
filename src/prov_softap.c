@@ -15,6 +15,7 @@
 #include "esp_log.h"
 #include "esp_mac.h"
 #include "esp_netif.h"
+#include "esp_system.h"
 #include "esp_wifi.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -117,8 +118,11 @@ void prov_softap_run(void)
     hcfg.lru_purge_enable = true;
     hcfg.max_uri_handlers = 16;
     if (httpd_start(&srv, &hcfg) != ESP_OK) {
-        ESP_LOGE(TAG, "httpd_start 失败");
-        return;
+        // AP 仍在跑但用户连上无页面 → 设 force flag 后重启再来一遍
+        ESP_LOGE(TAG, "httpd_start 失败，3s 后重启重试");
+        prov_storage_set_force_flag();
+        vTaskDelay(pdMS_TO_TICKS(3000));
+        esp_restart();
     }
     prov_http_register(srv, true);
 

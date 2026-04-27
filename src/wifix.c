@@ -86,9 +86,14 @@ static void load_runtime(const wifix_config_t *cfg)
                                             CONFIG_WIFIX_MAX_NETWORKS);
     s_rt.http_port               = pick_int(cfg ? cfg->http_port : 0,
                                             CONFIG_WIFIX_HTTP_PORT);
-    s_rt.power_cycle_threshold   = (cfg && cfg->power_cycle_threshold != 0)
-                                   ? cfg->power_cycle_threshold
-                                   : CONFIG_WIFIX_POWER_CYCLE_THRESHOLD;
+    // power_cycle_threshold：>0 用 cfg；<0 关闭功能；==0 用 Kconfig
+    if (cfg && cfg->power_cycle_threshold > 0) {
+        s_rt.power_cycle_threshold = cfg->power_cycle_threshold;
+    } else if (cfg && cfg->power_cycle_threshold < 0) {
+        s_rt.power_cycle_threshold = 0;
+    } else {
+        s_rt.power_cycle_threshold = CONFIG_WIFIX_POWER_CYCLE_THRESHOLD;
+    }
     s_rt.power_cycle_stable_ms   = CONFIG_WIFIX_POWER_CYCLE_STABLE_MS;
     s_rt.sta_connect_timeout_ms  = pick_int(cfg ? cfg->sta_connect_timeout_ms : 0,
                                             CONFIG_WIFIX_STA_CONNECT_TIMEOUT_MS);
@@ -125,20 +130,25 @@ static void start_sta_http(void)
     ESP_LOGI(TAG, "STA 管理界面已启动 (端口 %d)", s_rt.http_port);
 }
 
+// 等首次 CONNECTED，启 STA HTTP 后任务自删，不再轮询
 static void sta_state_watcher(void *arg)
 {
-    bool started = false;
-    while (1) {
-        if (!started && wifix_state() == WIFIX_STATE_CONNECTED) {
-            start_sta_http();
-            started = true;
-        }
+    while (wifix_state() != WIFIX_STATE_CONNECTED) {
         vTaskDelay(pdMS_TO_TICKS(500));
     }
+    start_sta_http();
+    vTaskDelete(NULL);
 }
 
 esp_err_t wifix_start(const wifix_config_t *cfg)
 {
+    static bool s_started = false;
+    if (s_started) {
+        ESP_LOGW(TAG, "wifix_start 已调用过，忽略重入");
+        return ESP_ERR_INVALID_STATE;
+    }
+    s_started = true;
+
     load_runtime(cfg);
 
     const char *def_user = (cfg && cfg->default_admin_user) ? cfg->default_admin_user

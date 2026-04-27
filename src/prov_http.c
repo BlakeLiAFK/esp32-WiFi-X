@@ -83,32 +83,50 @@ static bool form_get(const char *body, const char *key, char *out, size_t cap)
     return false;
 }
 
+// 读 body 必须基于 Content-Length，避免 buffer 写满后剩余字节留在 socket
+// 被解析为下一个 HTTP 请求（绕过 401 等假象）
+// 返回 >=0 实际读到字节数，<0 表示请求过大或读取失败（caller 应回 4xx 终止）
 static int read_body(httpd_req_t *req, char *buf, int cap)
 {
+    int clen = req->content_len;
+    if (clen <= 0) { buf[0] = 0; return 0; }
+    if (clen >= cap) return -1;  // 拒绝超长 body
+
     int total = 0;
-    while (total < cap - 1) {
-        int n = httpd_req_recv(req, buf + total, cap - 1 - total);
-        if (n <= 0) break;
+    while (total < clen) {
+        int n = httpd_req_recv(req, buf + total, clen - total);
+        if (n == HTTPD_SOCK_ERR_TIMEOUT) continue;
+        if (n <= 0) return -1;
         total += n;
     }
     buf[total] = 0;
     return total;
 }
 
+static esp_err_t send_413(httpd_req_t *req)
+{
+    httpd_resp_set_status(req, "413 Payload Too Large");
+    return httpd_resp_sendstr(req, "body too large");
+}
+
 // ---- JSON 转义（不含外层引号） ----
 static int json_escape(const char *src, char *dst, int cap)
 {
+    if (cap <= 0) return 0;
     int j = 0;
-    for (int i = 0; src[i] && j < cap - 2; i++) {
+    for (int i = 0; src[i]; i++) {
         unsigned char c = src[i];
         if (c == '"' || c == '\\') {
-            if (j + 2 >= cap - 1) break;
+            if (j + 2 >= cap) break;
             dst[j++] = '\\';
             dst[j++] = c;
         } else if (c < 0x20) {
-            if (j + 6 >= cap - 1) break;
-            j += snprintf(dst + j, cap - j, "\\u%04x", c);
+            if (j + 6 >= cap) break;
+            int w = snprintf(dst + j, cap - j, "\\u%04x", c);
+            if (w != 6) break;  // 容量不足导致截断，停止避免破坏 JSON
+            j += 6;
         } else {
+            if (j + 1 >= cap) break;
             dst[j++] = c;
         }
     }
@@ -232,7 +250,7 @@ static esp_err_t h_add(httpd_req_t *req)
     REQUIRE_AUTH(softap);
 
     char buf[512];
-    read_body(req, buf, sizeof(buf));
+    if (read_body(req, buf, sizeof(buf)) < 0) return send_413(req);
     char ssid[WIFIX_SSID_MAX] = {0};
     char pass[WIFIX_PASS_MAX] = {0};
     if (!form_get(buf, "ssid", ssid, sizeof(ssid)) || !ssid[0]) {
@@ -260,7 +278,7 @@ static esp_err_t h_remove(httpd_req_t *req)
     REQUIRE_AUTH(softap);
 
     char buf[256];
-    read_body(req, buf, sizeof(buf));
+    if (read_body(req, buf, sizeof(buf)) < 0) return send_413(req);
     char ssid[WIFIX_SSID_MAX] = {0};
     if (!form_get(buf, "ssid", ssid, sizeof(ssid))) {
         httpd_resp_set_status(req, "400 Bad Request");
@@ -307,7 +325,7 @@ static esp_err_t h_change_pw(httpd_req_t *req)
     bool softap = (bool)(uintptr_t)req->user_ctx;
     REQUIRE_AUTH(softap);
     char buf[256];
-    read_body(req, buf, sizeof(buf));
+    if (read_body(req, buf, sizeof(buf)) < 0) return send_413(req);
     char user[WIFIX_USER_MAX] = {0};
     char pass[WIFIX_PASS_MAX] = {0};
     if (!form_get(buf, "user", user, sizeof(user)) || !user[0]) {
