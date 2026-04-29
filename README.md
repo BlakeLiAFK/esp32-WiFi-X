@@ -1,4 +1,8 @@
-# wifix
+# WiFi-X
+
+<p align="center">
+  <img src="docs/hero.png" alt="WiFi-X — ESP32 WiFi Provisioning Component" width="640">
+</p>
 
 ESP32 WiFi 配网与多网络管理 component。
 
