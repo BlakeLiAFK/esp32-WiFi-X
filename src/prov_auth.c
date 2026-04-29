@@ -15,7 +15,7 @@
 static const char *TAG = "wifix.auth";
 
 #define AUTH_HEADER_NAME "Authorization"
-#define WWW_AUTH_VALUE   "Basic realm=\"Wifix\", charset=\"UTF-8\""
+#define WWW_AUTH_VALUE   "Basic realm=\"WiFi-X\", charset=\"UTF-8\""
 #define AUTH_FAIL_DELAY_MS  300
 
 // 解析并校验 Authorization: Basic 头；成功填充 user/pass 返回 true

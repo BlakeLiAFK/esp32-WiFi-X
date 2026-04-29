@@ -38,7 +38,7 @@ void app_main(void)
     wifix_set_event_cb(on_state, NULL);
 
     wifix_config_t cfg = WIFIX_DEFAULT_CONFIG();
-    cfg.ap_ssid_prefix = "Wifix-";
+    // 留空使用 Kconfig 默认 "X-"；自己定品牌如 "MyDevice-"
     ESP_ERROR_CHECK(wifix_start(&cfg));
 
     // 业务逻辑：等连上后做事

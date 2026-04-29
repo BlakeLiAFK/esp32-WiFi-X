@@ -1,4 +1,4 @@
-menu "Wifix - WiFi Provisioning"
+menu "WiFi-X - WiFi Provisioning"
 
     config WIFIX_MAX_NETWORKS
         int "保存的最大 WiFi 网络数"

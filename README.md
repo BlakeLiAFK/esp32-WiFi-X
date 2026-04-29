@@ -55,7 +55,7 @@ idf_component_register(SRCS "app_main.c" INCLUDE_DIRS ".")
 
 ### 3. menuconfig 调参
 
-`idf.py menuconfig` → `Wifix - WiFi Provisioning`：
+`idf.py menuconfig` → `WiFi-X - WiFi Provisioning`：
 - `WIFIX_MAX_NETWORKS` 默认 16
 - `WIFIX_DEFAULT_USERNAME` / `WIFIX_DEFAULT_PASSWORD` 默认 `admin` / `admin`
 - `WIFIX_AP_SSID_PREFIX` 默认 `X-`（最终 AP 名形如 `X-9075`）

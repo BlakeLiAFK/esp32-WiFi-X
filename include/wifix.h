@@ -38,7 +38,7 @@ typedef enum {
 } wifix_state_t;
 
 typedef struct {
-    // SoftAP SSID 前缀；NULL 表示用 Kconfig 默认（"Wifix-"）。
+    // SoftAP SSID 前缀；NULL 表示用 Kconfig 默认（"X-"）。
     // 实际 AP SSID = <前缀><MAC 后两字节十六进制>，如 "DriftCam-9075"。
     const char *ap_ssid_prefix;
 

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Wifix</title>
+<title>WiFi-X</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{overflow-x:hidden}
@@ -46,7 +46,7 @@ summary:hover{color:#e6edf3}
 </style>
 </head>
 <body>
-<h1 id="title">Wifix</h1>
+<h1 id="title">WiFi-X</h1>
 <div class="sub" id="subtitle">配网管理</div>
 
 <div class="card" id="status-card" style="display:none">
@@ -136,7 +136,7 @@ async function api(path,opts){
 async function loadInfo(){
   const r=await api('/info');if(!r)return;
   info=await r.json();
-  $('title').textContent= info.mode==='ap'?'Wifix 配网':'Wifix 管理';
+  $('title').textContent= info.mode==='ap'?'WiFi-X 配网':'WiFi-X 管理';
   $('subtitle').textContent= info.mode==='ap'?'设备首次配置或被请求重新配网':'已连入家庭网络';
   if(info.mode==='sta'){
     $('status-card').style.display='block';
