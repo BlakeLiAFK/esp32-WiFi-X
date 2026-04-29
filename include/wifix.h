@@ -56,6 +56,11 @@ typedef struct {
 
     // STA 模式是否启 HTTP 管理界面：0=默认（开），1=强制开，-1=关闭
     int enable_sta_http;
+
+    // STA TX 功率上限（单位 0.25 dBm；0 = 不动用 IDF 默认 80=20dBm）
+    // ESP32-C3 SuperMini 焊飞线天线必设 52（13 dBm）防 RF 自激。
+    // C6/S3/原装 C3 板载 PCB 天线无需设。
+    int sta_max_tx_power_qdbm;
 } wifix_config_t;
 
 // 全 0 即可，所有字段会回退到 Kconfig 默认

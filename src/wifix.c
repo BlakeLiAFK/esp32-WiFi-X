@@ -122,6 +122,8 @@ static void load_runtime(const wifix_config_t *cfg)
         s_rt.enable_sta_http = true;   // 0 或未设：默认开
     }
 
+    s_rt.sta_max_tx_power_qdbm = cfg ? cfg->sta_max_tx_power_qdbm : 0;
+
 #ifdef CONFIG_WIFIX_REQUIRE_AUTH_IN_AP
     s_rt.require_auth_in_ap = true;
 #else

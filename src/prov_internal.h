@@ -19,6 +19,7 @@ typedef struct {
     int   sta_retry_round_delay_ms;
     bool  enable_sta_http;
     bool  require_auth_in_ap;
+    int   sta_max_tx_power_qdbm;
 } prov_runtime_t;
 
 const prov_runtime_t *prov_rt(void);

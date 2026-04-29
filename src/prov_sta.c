@@ -222,6 +222,14 @@ esp_err_t prov_sta_start(void)
     esp_wifi_set_ps(WIFI_PS_NONE);
     esp_wifi_start();
 
+    // 必须在 esp_wifi_start 之后设置；C3 SuperMini 飞线天线必降到 13dBm 防自激
+    if (prov_rt()->sta_max_tx_power_qdbm > 0) {
+        esp_wifi_set_max_tx_power((int8_t)prov_rt()->sta_max_tx_power_qdbm);
+        int8_t cur = 0;
+        esp_wifi_get_max_tx_power(&cur);
+        ESP_LOGI(TAG, "TX power 设为 %d * 0.25dBm = %.1f dBm", cur, cur * 0.25f);
+    }
+
     xTaskCreate(sta_task, "wifix_sta", 4096, NULL, 5, &s_task);
     return ESP_OK;
 }
